@@ -1,4 +1,5 @@
-import asyncio, evdev
+import asyncio
+import evdev
 
 rfid1 = evdev.InputDevice('/dev/input/event7')
 rfid2 = evdev.InputDevice('/dev/input/event9')
