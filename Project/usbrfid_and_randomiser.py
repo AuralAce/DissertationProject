@@ -1,4 +1,5 @@
 import random
+import usb
 
 sort = ["Colour","Alphabetically","Size"]
 
@@ -33,7 +34,7 @@ size = {
     "0796ABDA4CAC": "8",
     
     "0E0096E5A6DB": "16",
-    
+
     "0796AE842299": "32"
     
     }
@@ -47,5 +48,5 @@ def choose_sort():
     rand = random.choice(sort)
     return rand
 
-while True:
+# while True:
     type = input()
