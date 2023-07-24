@@ -18,3 +18,5 @@ for device in rfid1, rfid2, rfid3, rfid4, rfid5, rfid6, rfid7:
 
 loop = asyncio.get_event_loop()
 loop.run_forever()
+
+
