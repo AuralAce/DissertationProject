@@ -1,7 +1,10 @@
 import asyncio
-import evdev
+#import evdev
 import random
+import usb.core
+import usb.util
 
+'''
 rfid1 = evdev.InputDevice('/dev/input/event7')
 rfid2 = evdev.InputDevice('/dev/input/event9')
 rfid3 = evdev.InputDevice('/dev/input/event11')
@@ -13,6 +16,30 @@ rfid7 = evdev.InputDevice('/dev/input/event19')
 async def print_events(device):
     async for event in device.async_read_loop():
         print(device.path, evdev.categorize(event), sep=': ')
+'''
+'''
+for device in rfid1, rfid2, rfid3, rfid4, rfid5, rfid6, rfid7:
+    #asyncio.ensure_future(print_events(device))
+    uid = input()
+    if uid == "0009889158" and evdev.util.is_device(rfid1):
+        print("hello")
+    elif uid == "0009889158" and evdev.util.is_device(rfid2):
+        print("hello 2")
+    elif uid == "0009889158" and evdev.util.is_device(rfid3):
+        print("hello 3")
+    elif uid == "0009889158" and evdev.util.is_device(rfid4):
+        print("hello 4")
+    elif uid == "0009889158" and evdev.util.is_device(rfid5):
+        print("hello 5")
+    elif uid == "0009889158" and evdev.util.is_device(rfid6):
+        print("hello 6")
+    elif uid == "0009889158" and evdev.util.is_device(rfid7):
+        print("hello 7")
+   
+    
+loop = asyncio.get_event_loop()
+loop.run_forever()
+'''
 
 sort = ["Cartridge Colour","Room Name, Alphabetically","Size of Memory(GB)"]
 
@@ -75,35 +102,49 @@ colour_order = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"]
 room_names_order = ["Bathroom", "Bedroom", "Garage", "Hall" "Kitchen", "Living Room", "Utility"]
 size_order = ["8", "16", "32", "64", "128", "256", "512"]
 
+#function to choose how the puzzle must be sorted
 def choose_sort():
     rand = random.choice(sort)
     return rand
 
-'''
-for device in rfid1, rfid2, rfid3, rfid4, rfid5, rfid6, rfid7:
-    #asyncio.ensure_future(print_events(device))
-    uid = input()
-    if uid == "0009889158" and evdev.util.is_device(rfid1):
-        print("hello")
-    elif uid == "0009889158" and evdev.util.is_device(rfid2):
-        print("hello 2")
-    elif uid == "0009889158" and evdev.util.is_device(rfid3):
-        print("hello 3")
-    elif uid == "0009889158" and evdev.util.is_device(rfid4):
-        print("hello 4")
-    elif uid == "0009889158" and evdev.util.is_device(rfid5):
-        print("hello 5")
-    elif uid == "0009889158" and evdev.util.is_device(rfid6):
-        print("hello 6")
-    elif uid == "0009889158" and evdev.util.is_device(rfid7):
-        print("hello 7")
-   
+#function to find all RFID devices
+def find_devices(vendor_id, product_id):
     
-loop = asyncio.get_event_loop()
-loop.run_forever()
-'''
+    devices = usb.core.find(find_all=True)
+    
+    matching_devices = []
+    
+    for dev in devices:
+        
+        if dev.idVendor == vendor_id and dev.idProduct == product_id:
+            matching_devices.append(dev)
+            
+    return matching_devices
+
+def find_serial_number():
+    
+    vendor_id = 0x1a86
+    product_id = 0xdd01
+    
+    devices = find_devices(vendor_id, product_id)
+    
+    if not devices:
+        print("No devices found with specified vendor and product IDS.")
+        return
+    
+    devices = devices[:7]
+    
+    serial = []
+    
+    for dev in devices:
+        
+        serial_number = usb.util.get_string(dev, dev.iSerialNumber)
+        print(f"Device Serial Number: {serial_number}")
+        serial.append(serial_number)
+
 
 while True:
+    serial_no = find_serial_number()
     sorter = choose_sort()
     print(f"Sort the computer's memory by: {sorter}")
 
