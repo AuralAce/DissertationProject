@@ -1,7 +1,6 @@
 import evdev
 from pyudev import Context, Device
-import threading
-import queue
+import selectors
 
 # Class to hold RFID device information
 class RFIDDevice:
@@ -19,50 +18,39 @@ def read_rfid_tags(rfid_event_paths):
     for device in rfid_devices.values():
         print(f"Serial: {device.serial_number}, Name: {device.device.name}, Path: {device.event_path}")
 
-    tag_data_queue = queue.Queue()
+    sel = selectors.DefaultSelector()
     
     print("hello")
     
-    def read_events_rfid(serial_number, device):
-        
-        try:
-            print("hello2")
-            event_device = evdev.InputDevice(device.event_path)
-            print(f"RFID Reader {device.serial_number} is ready to read")
-            uid = input()
-            for event in event_device.read_loop():
-                if event.type == evdev.ecodes.EV_KEY:
-                    key_event = evdev.categorize(event)
-                    if key_event.keystate == 1:
-                        tag_data = key_event.keycode[10:]
-                        tag_data_queue.put((serial_number, tag_data))
-        except Exception as e:
-            print(e)
-            
-    threads = []
-    
     for serial_number, device in rfid_event_paths.items():
         if device.event_path is not None:
-            thread = threading.Thread(target=read_events_rfid, args=(serial_number, device))
-            thread.daemon = True
-            thread.start()
-            threads.append(thread)
-    
+            event_device = evdev.InputDevice(device.event_path)
+            event_device.grab()
+            sel.register(event_device, selectors.EVENT_READ, data=(serial_number, event_device))
+         
+            
     while True:
-        try:
-            serial_number, tag_data = tag_data_queue.get(timeout=1)
-            location = rfid_locations.get(serial_number)
-            if location is not None:
-                print(f"RFID Tag ID: {tag_data}, Scanned at: {location}")
-            else:
-                print(f"RFID Tag ID: {tag_data}, Location unknown")
-            tag_data_queue.task_done()
-        except queue.Empty:
-            pass
+        print("hello")
+        for key, mask in sel.select():
+            print("hello2")
+            serial_number, event_device = key.data
+            print("hello3")
+            try:
+                print("hello4")
+                for event in event_device.read():
+                    print("hello5")
+                    if event.type == evdev.ecodes.EV_KEY:
+                        key_event = evdev.categorize(event)
+                        if key_event.keystate == 1:
+                            tag_data = key_event.keycode[10:]
+                            location = rfid_locations.get(serial_number)
+                            if location is not None:
+                                print(f"Tag ID: {tag_data}, scanned by RFID: {location}")
+                            else:
+                                print(f"Tag ID: {tag_data}, scanned by RFID: unknown")
+            except Exception as e:
+                print(e)
         
-    for thread in threads:
-        thread.join()
-    
 # Function to find USB RFID devices and retrieve their serial numbers
 def find_rfid_devices():
     # Vendor and Product IDs for the RFID readers
