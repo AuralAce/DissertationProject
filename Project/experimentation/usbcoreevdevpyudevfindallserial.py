@@ -3,12 +3,14 @@ import usb.core
 import usb.util
 import pyudev
 from pyudev import Context, Device
+import select
 
 # Class to hold RFID device information
 class RFIDDevice:
-    def __init__(self, device, serial_number):
+    def __init__(self, device, serial_number, event_path):
         self.device = device
         self.serial_number = serial_number
+        self.event_path = event_path
 
 # Function to read RFID tags and get the RFID reader serial number
 def read_rfid_tags(rfid_event_paths):
@@ -17,28 +19,41 @@ def read_rfid_tags(rfid_event_paths):
 
     print("RFID Readers Found:")
     for device in rfid_devices.values():
-        print(f"Serial: {device.serial_number}, Name: {device.device.name}")
+        print(f"Serial: {device.serial_number}, Name: {device.device.name}, Path: {device.event_path}")
 
     # Read RFID tags
     while True:
-        for serial_number, event_path in rfid_event_paths.items():
-            if event_path is not None:
-                for event in evdev.InputDevice(event_path).read_loop():
-                    if event.type == evdev.ecodes.EV_KEY:
-                        key_event = evdev.categorize(event)
-                        if key_event.keystate == 1:  
-                            tag_data = key_event.keycode[10:]
-                            print(f"RFID Tag UID: {tag_data}")
+        print("hello3")
+        for serial_number, device in rfid_event_paths.items():
+            print("hello4")
+            if device.event_path is not None:
+                print("hello5")
+                event_device = evdev.InputDevice(device.event_path)
+                print(f"RFID Reader {device.serial_number} is ready to read")
+                event_device.grab()
+                while True:
+                    print("hub")
+                    r, w, x = select.select([event_device.fd],[],[],1)
+                    print("hug")
+                    if r:
+                        for event in event_device.read_loop(timeout=1):
+                            print("hello6")
+                            if event.type == evdev.ecodes.EV_KEY:
+                                print("hello7")
+                                key_event = evdev.categorize(event)
+                                if key_event.keystate == 1:  
+                                    tag_data = key_event.keycode[10:]
+                                    print(f"RFID Tag UID: {tag_data}")
                             
-                            device = rfid_devices.get(serial_number)
-                            if device is not None:
-                                location = rfid_locations.get(serial_number)
-                                if location is not None:
-                                    print(f"Tag scanned by RFID Reader at Location: {location}")
-                                else:
-                                    print("RFID reader location not found.")
-                            else:
-                                print("nah")
+                                    device = rfid_devices.get(serial_number)
+                                    if device is not None:
+                                        location = rfid_locations.get(serial_number)
+                                        if location is not None:
+                                            print(f"Tag scanned by RFID Reader at Location: {location}")
+                                        else:
+                                            print("RFID reader location not found.")
+                                    else:
+                                        print("nah")
                                 
 # Function to find USB RFID devices and retrieve their serial numbers
 def find_rfid_devices():
@@ -55,7 +70,7 @@ def find_rfid_devices():
             if device.info.vendor==vendor_id and device.info.product==product_id:
                 serial_number = get_usb_device_serial(device.path)
                 if serial_number is not None:
-                    rfid_devices[serial_number]= RFIDDevice(device, serial_number)
+                    rfid_devices[serial_number]= RFIDDevice(device, serial_number, path)
         except Exception as e:
             print(e)
     if not rfid_devices:
@@ -80,9 +95,9 @@ rfid_locations = {
     }
 
 def main():
-    
+    print("hello")
     rfid_event_paths = find_rfid_devices()
-    
+    print("hello2")
     read_rfid_tags(rfid_event_paths)
 
 if __name__ == "__main__":
