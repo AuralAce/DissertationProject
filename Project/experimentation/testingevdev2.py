@@ -1,7 +1,7 @@
 import asyncio
 import evdev
 
-rfid1 = evdev.InputDevice('/dev/input/event7')
+rfid1 = evdev.InputDevice('/dev/input/event1')
 rfid2 = evdev.InputDevice('/dev/input/event9')
 rfid3 = evdev.InputDevice('/dev/input/event11')
 rfid4 = evdev.InputDevice('/dev/input/event13')

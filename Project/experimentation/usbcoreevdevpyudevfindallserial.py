@@ -1,6 +1,6 @@
 import evdev
 from pyudev import Context, Device
-import selectors
+import asyncio
 
 # Class to hold RFID device information
 class RFIDDevice:
@@ -17,52 +17,51 @@ def read_rfid_tags(rfid_event_paths):
     print("RFID Readers Found:")
     for device in rfid_devices.values():
         print(f"Serial: {device.serial_number}, Name: {device.device.name}, Path: {device.event_path}")
-
-    sel = selectors.DefaultSelector()
     
-    print("hello")
+    print("pre read")
     
-    for serial_number, device in rfid_event_paths.items():
-        if device.event_path is not None:
-            event_device = evdev.InputDevice(device.event_path)
-            event_device.grab()
-            sel.register(event_device, selectors.EVENT_READ, data=(serial_number, event_device))
-         
-            
-    while True:
-        print("hello")
-        for key, mask in sel.select():
+    async def read_events_rfid(serial_number, device):
+        print("in read")
+        try:
             print("hello2")
-            serial_number, event_device = key.data
-            print("hello3")
-            try:
-                print("hello4")
-                for event in event_device.read():
-                    print("hello5")
-                    if event.type == evdev.ecodes.EV_KEY:
-                        key_event = evdev.categorize(event)
-                        if key_event.keystate == 1:
-                            tag_data = key_event.keycode[10:]
-                            location = rfid_locations.get(serial_number)
-                            if location is not None:
-                                print(f"Tag ID: {tag_data}, scanned by RFID: {location}")
-                            else:
-                                print(f"Tag ID: {tag_data}, scanned by RFID: unknown")
-            except Exception as e:
-                print(e)
-        
+            event_device = evdev.InputDevice(device.event_path)
+            print(f"RFID Reader {device.serial_number} is ready to read")
+            async for event in event_device.async_read_loop():
+                if event.type == evdev.ecodes.EV_KEY:
+                    key_event = evdev.categorize(event)
+                    if key_event.keystate == 1:
+                        tag_data = key_event.keycode[10:]
+                        location = rfid_locations.get(serial_number)
+                        if location is not None:
+                            print(f"RFID Tag ID: {tag_data}, Scanned by RFID {location}")
+                        else:
+                            print(f"RFID Tag ID: {tag_data}, Scanned by RFID unknown")
+        except Exception as e:
+            print(e)
+            
+        tasks = []
+    
+        for serial_number, device in rfid_event_paths.items():
+            if device.event_path is not None:
+                print("not none")
+                task = asyncio.create_task(read_events_rfid(serial_number, device))
+                tasks.append(task)
+                
+        await asyncio.gather(*tasks)
+    
 # Function to find USB RFID devices and retrieve their serial numbers
 def find_rfid_devices():
     # Vendor and Product IDs for the RFID readers
     vendor_id = 0x1a86
     product_id = 0xdd01
-
+    device_name = "RFID Reader RFID Reader Keyboard"
+    
     rfid_devices = {}
     
     for path in evdev.list_devices():
         try:
             device = evdev.InputDevice(path)
-            if device.info.vendor==vendor_id and device.info.product==product_id:
+            if device.info.vendor==vendor_id and device.info.product==product_id and device.name==device_name:
                 serial_number = get_usb_device_serial(device.path)
                 if serial_number is not None:
                     rfid_devices[serial_number]= RFIDDevice(device, serial_number, path)
@@ -89,11 +88,12 @@ rfid_locations = {
     "ID32D385B8": "7"
     }
 
-def main():
+async def main():
     print("hello")
     rfid_event_paths = find_rfid_devices()
-    print("hello2")
-    read_rfid_tags(rfid_event_paths)
+    print("RFID Readers Found:")
+    for device in rfid_event_paths.values():
+        print(f"Serial: {device.serial_number}, Name: {device.device.name}, Path: {device.event_path}")
+    await read_rfid_tags(rfid_event_paths.keys())
 
-if __name__ == "__main__":
-    main()
+asyncio.run(main())
