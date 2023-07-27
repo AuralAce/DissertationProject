@@ -1,6 +1,7 @@
 import evdev
 from pyudev import Context, Device
-import asyncio
+import threading
+import queue
 
 # Class to hold RFID device information
 class RFIDDevice:
@@ -18,36 +19,52 @@ def read_rfid_tags(rfid_event_paths):
     for device in rfid_devices.values():
         print(f"Serial: {device.serial_number}, Name: {device.device.name}, Path: {device.event_path}")
     
+    tag_data_queue = queue.Queue()
+    
     print("pre read")
     
-    async def read_events_rfid(serial_number, device):
+    def read_events_rfid(serial_number, device):
         print("in read")
         try:
             print("hello2")
             event_device = evdev.InputDevice(device.event_path)
             print(f"RFID Reader {device.serial_number} is ready to read")
-            async for event in event_device.async_read_loop():
-                if event.type == evdev.ecodes.EV_KEY:
+            while True:
+                event = event_device.read_one()
+                print(event)
+                if event is not None and event.type == evdev.ecodes.EV_KEY:
                     key_event = evdev.categorize(event)
                     if key_event.keystate == 1:
                         tag_data = key_event.keycode[10:]
-                        location = rfid_locations.get(serial_number)
-                        if location is not None:
-                            print(f"RFID Tag ID: {tag_data}, Scanned by RFID {location}")
-                        else:
-                            print(f"RFID Tag ID: {tag_data}, Scanned by RFID unknown")
+                        tag_data_queue.put((serial_number, tag_data))
         except Exception as e:
             print(e)
             
-        tasks = []
+        threads = []
     
         for serial_number, device in rfid_event_paths.items():
+            
             if device.event_path is not None:
-                print("not none")
-                task = asyncio.create_task(read_events_rfid(serial_number, device))
-                tasks.append(task)
                 
-        await asyncio.gather(*tasks)
+                thread = threading.Thread(target=read_events_rfid, args=(serial_number, device))
+                thread.daemon = True
+                thread.start()
+                threads.append(thread)
+                
+        while True:
+            
+            try:
+                
+                serial_number, tag_data = tag_data_queue.get(timeout=1)
+                location = rfid_locations.get(serial_number)
+                if location is not None:
+                    print(f"RFID Tag ID: {tag_data}, Scanned by RFID {location}")
+                else:
+                    print(f"RFID Tag ID: {tag_data}, Scanned by RFID unknown")
+                tag_data_queue.task_done()
+                
+            except queue.Empty:
+                pass
     
 # Function to find USB RFID devices and retrieve their serial numbers
 def find_rfid_devices():
@@ -88,12 +105,12 @@ rfid_locations = {
     "ID32D385B8": "7"
     }
 
-async def main():
+def main():
     print("hello")
+    
     rfid_event_paths = find_rfid_devices()
-    print("RFID Readers Found:")
-    for device in rfid_event_paths.values():
-        print(f"Serial: {device.serial_number}, Name: {device.device.name}, Path: {device.event_path}")
-    await read_rfid_tags(rfid_event_paths.keys())
+    
+    read_rfid_tags(rfid_event_paths)
 
-asyncio.run(main())
+if __name__ == "__main__":
+    main()
