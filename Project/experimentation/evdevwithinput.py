@@ -1,13 +1,13 @@
 import evdev
 from pyudev import Context, Device
-import threading
-import queue
 import asyncio
 
 # Global Variable
 vendor_id = 0x1a86
 product_id = 0xdd01
 device_name = "RFID Reader RFID Reader Keyboard"
+last_id = ""
+rfid_devices = {}
 
 # Class to hold RFID device information
 class RFIDDevice:
@@ -30,7 +30,7 @@ def find_device_paths():
             device_paths.append(path)
             
     return device_paths
-
+'''
 #Global path variables
 rfid1 = evdev.InputDevice(find_device_paths()[6])
 rfid2 = evdev.InputDevice(find_device_paths()[5])
@@ -39,11 +39,13 @@ rfid4 = evdev.InputDevice(find_device_paths()[3])
 rfid5 = evdev.InputDevice(find_device_paths()[2])
 rfid6 = evdev.InputDevice(find_device_paths()[1])
 rfid7 = evdev.InputDevice(find_device_paths()[0])
+'''
+rfids = []
+for i in range(7):
+    rfids.append(evdev.InputDevice(find_device_paths()[i]))
 
 # Function to find USB RFID devices and retrieve their serial numbers
 def find_rfid_devices():
-    
-    rfid_devices = {}
     
     for path in evdev.list_devices():
         
@@ -78,27 +80,44 @@ def get_usb_device_serial(path: str)->str:
 
 def read_rfid_device(rfid_devices):
     
+    global last_id
+    
     devices = rfid_devices
     
     while True:
         
-        read = input()
-        
-        for device in rfid1, rfid2, rfid3, rfid4, rfid5, rfid6, rfid7:
-            asyncio.ensure_future(print_events(device))
+        #last_id = input()
+        #print(last_id)
 
+        for device in rfids:
+            asyncio.ensure_future(print_events(device))
+        
+        asyncio.ensure_future(read_input())
         loop = asyncio.get_event_loop()
-        loop.run_forever()
+        loop.run_forever()   
         
         
+async def read_input():
+    
+    global last_id
+    
+    while True:
+        last_id = input()
+        print("Input = " + last_id)
+        await asyncio.sleep(1)
+
 async def print_events(device):
     async for event in device.async_read_loop():
         print(device.path)
-
-
+        path = device.path
+        print("Hello " + path)
+        serial = rfid_devices[path].serial_number
+        print("Last ID: " + last_id + " received on " + serial)
+    
 def main():
     devices = find_rfid_devices()
     read_rfid_device(devices)
     
 if __name__ == "__main__":
     main()
+    
