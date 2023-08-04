@@ -31,6 +31,8 @@ colour = {
     
     }
 
+colour_array = ["0009889158", "2527844940", "0009889190", "2528019490", "2528028748", "2528028480", "2528028129"] 
+
 room_names = {
     
     "0009889190": "Bathroom",
@@ -48,7 +50,9 @@ room_names = {
     "2528028748": "Utility"
     
     }
-    
+
+room_names_array = ["0009889190", "0009889158", "2528028480", "2528028129", "2528019490", "2527844940", "2528028748"] 
+
 size = {
     
     "2527844940": "8",
@@ -67,6 +71,8 @@ size = {
     
     }
 
+size_array = ["2527844940", "0009889190", "2528019490", "0009889158", "2528028129", "2528028480", "2528028748"] 
+
 # Class to hold RFID device information
 class RFIDDevice:
     def __init__(self, device, serial_number, event_path):
@@ -79,15 +85,31 @@ def choose_sort():
     rand = random.choice(sort)
     return rand
 
+'''
 def sort_answer(sorter):
     
+    i=0
+    print("sort_answer")
+    
     if(sorter=="Cartridge Colour"):
+        print("if 1")
         for device in rfid_devices:
-            expected_answer[device.serial_number] = colour.key[i]
+            print(device)
+     
+        print(expected_answer)
     if(sorter=="Room Name, Alphabetically"):
+        print("if 2")
+        for device in rfid_devices:
+            print(device)
+      
         print(expected_answer)
     if(sorter=="Size of Memory(GB)"):
+        print("if 3")
+        for device in rfid_devices:
+            print(device)
+      
         print(expected_answer)
+'''
 
 # get device paths
 def find_device_paths():
@@ -109,7 +131,9 @@ for i in range(7):
 
 
 # Function to find USB RFID devices and retrieve their serial numbers
-def find_rfid_devices():
+def find_rfid_devices(sorter):
+
+    i = 0
 
     for path in evdev.list_devices():
 
@@ -123,7 +147,22 @@ def find_rfid_devices():
 
                 if serial_number is not None:
                     rfid_devices[path] = RFIDDevice(device, serial_number, path)
-                    expected_answer[serial_number] = ""
+                    
+                    if(sorter=="Cartridge Colour"):
+                        expected_answer[serial_number] = colour_array[i]
+                        i+=1
+                        print(expected_answer)
+                    if(sorter=="Room Name, Alphabetically"):
+                        print("if 2")
+                        expected_answer[serial_number] = room_names_array[i]
+                        i+=1
+                        print(expected_answer)
+                    if(sorter=="Size of Memory(GB)"):
+                        print("if 3")
+                        expected_answer[serial_number] = size_array[i]
+                        i+=1
+                        print(expected_answer)
+                    
                     current_answer[serial_number] = ""
                     print(rfid_devices[path].serial_number, rfid_devices[path].event_path)
 
@@ -183,9 +222,9 @@ async def read_events(device):
         print(current_answer)
     
 def main():
-    devices = find_rfid_devices()
     sorter = choose_sort()
-    answer = sort_answer(sorter)
+    devices = find_rfid_devices(sorter)
+    #answer = sort_answer(sorter)
     print(f"Sort the computer's memory by: {sorter}")
     read_rfid_device(devices)
 
