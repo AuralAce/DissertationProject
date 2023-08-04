@@ -85,32 +85,6 @@ def choose_sort():
     rand = random.choice(sort)
     return rand
 
-'''
-def sort_answer(sorter):
-    
-    i=0
-    print("sort_answer")
-    
-    if(sorter=="Cartridge Colour"):
-        print("if 1")
-        for device in rfid_devices:
-            print(device)
-     
-        print(expected_answer)
-    if(sorter=="Room Name, Alphabetically"):
-        print("if 2")
-        for device in rfid_devices:
-            print(device)
-      
-        print(expected_answer)
-    if(sorter=="Size of Memory(GB)"):
-        print("if 3")
-        for device in rfid_devices:
-            print(device)
-      
-        print(expected_answer)
-'''
-
 # get device paths
 def find_device_paths():
     device_paths = []
@@ -146,22 +120,23 @@ def find_rfid_devices(sorter):
                 serial_number = get_usb_device_serial(device.path)
 
                 if serial_number is not None:
+                    
                     rfid_devices[path] = RFIDDevice(device, serial_number, path)
                     
                     if(sorter=="Cartridge Colour"):
+                        
                         expected_answer[serial_number] = colour_array[i]
                         i+=1
-                        print(expected_answer)
+
                     if(sorter=="Room Name, Alphabetically"):
-                        print("if 2")
+
                         expected_answer[serial_number] = room_names_array[i]
                         i+=1
-                        print(expected_answer)
+
                     if(sorter=="Size of Memory(GB)"):
-                        print("if 3")
+                        
                         expected_answer[serial_number] = size_array[i]
                         i+=1
-                        print(expected_answer)
                     
                     current_answer[serial_number] = ""
                     print(rfid_devices[path].serial_number, rfid_devices[path].event_path)
@@ -217,15 +192,18 @@ async def read_events(device):
         print("Hello " + path)
         serial = rfid_devices[path].serial_number
         print("Last ID: " + last_id + " received on " + serial)
-        current_answer[serial]  = last_id
+        current_answer[serial] = last_id
         print(current_answer[serial])
         print(current_answer)
+        if current_answer == expected_answer:
+            print("Complete!")
     
 def main():
     sorter = choose_sort()
     devices = find_rfid_devices(sorter)
-    #answer = sort_answer(sorter)
     print(f"Sort the computer's memory by: {sorter}")
+    print(expected_answer)
+    print(current_answer)
     read_rfid_device(devices)
 
 
