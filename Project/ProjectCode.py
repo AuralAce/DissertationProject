@@ -2,6 +2,7 @@ import evdev
 from pyudev import Context, Device
 import asyncio
 import random
+from PIL import Image
 
 # Global Variable
 vendor_id = 0x1a86
@@ -12,64 +13,21 @@ rfid_devices = {}
 sort = ["Cartridge Colour","Room Name, Alphabetically","Size of Memory(GB)"]
 expected_answer = {}
 current_answer = {}
+main_img = Image.open("Images/Sort The Memory Cards.png")
+green_images = {}
+red_images = {}
 
-colour = {
-    
-    "0009889158": "Red",
-    
-    "0009882317": "Orange",
-    
-    "0009889190": "Yellow",
-    
-    "0009882781": "Green",
-    
-    "0009881990": "Blue",
-    
-    "0009891572": "Indigo",
-    
-    "0009889520": "Violet"
-    
-    }
+green_bars = [Image.open("Images/Green 1.png"), Image.open("Images/Green 2.png"), Image.open("Images/Green 3.png"),
+              Image.open("Images/Green 4.png"), Image.open("Images/Green 5.png"), Image.open("Images/Green 6.png"),
+              Image.open("Images/Green 7.png")]
+
+red_bars = [Image.open("Images/Red 1.png"), Image.open("Images/Red 2.png"), Image.open("Images/Red 3.png"),
+              Image.open("Images/Red 4.png"), Image.open("Images/Red 5.png"), Image.open("Images/Red 6.png"),
+              Image.open("Images/Red 7.png")]
 
 colour_array = ["0009889158", "0009882317", "0009889190", "0009882781", "0009881990", "0009891572", "0009889520"] 
 
-room_names = {
-    
-    "0009889190": "Bathroom",
-    
-    "0009889158": "Bedroom",
-    
-    "0009891572": "Garage",
-    
-    "0009889520": "Hall",
-    
-    "0009882781": "Kitchen",
-    
-    "0009882317": "Living Room",
-    
-    "0009881990": "Utility"
-    
-    }
-
 room_names_array = ["0009889190", "0009889158", "0009891572", "0009889520", "0009882781", "0009882317", "0009881990"] 
-
-size = {
-    
-    "0009882317": "8",
-    
-    "0009889190": "16",
-
-    "0009882781": "32",
-    
-    "0009889158": "64",
-    
-    "0009889520": "128",
-
-    "0009891572": "256",
-    
-    "0009881990": "512"
-    
-    }
 
 size_array = ["0009882317", "0009889190", "0009882781", "0009889158", "0009889520", "0009891572", "0009881990"] 
 
@@ -85,6 +43,15 @@ def choose_sort():
     rand = random.choice(sort)
     return rand
 
+#Uses PIL to composite the correct sort image onto the background image
+def sort_image(sorter):
+    
+    global main_img
+    
+    sort_img = Image.open(f"Images/{sorter}.png")
+    
+    main_img = Image.alpha_composite(main_img, sort_img)
+    
 # get device paths
 def find_device_paths():
     device_paths = []
@@ -102,7 +69,6 @@ def find_device_paths():
 rfids = []
 for i in range(7):
     rfids.append(evdev.InputDevice(find_device_paths()[i]))
-
 
 # Function to find USB RFID devices and retrieve their serial numbers
 def find_rfid_devices(sorter):
@@ -122,6 +88,10 @@ def find_rfid_devices(sorter):
                 if serial_number is not None:
                     
                     rfid_devices[path] = RFIDDevice(device, serial_number, path)
+                    
+                    green_images[serial_number] = green_bars[i]
+                    
+                    red_images[serial_number] = red_bars[i]
                     
                     if(sorter=="Cartridge Colour"):
                         
@@ -195,11 +165,16 @@ async def read_events(device):
         current_answer[serial] = last_id
         print(current_answer[serial])
         print(current_answer)
-        if current_answer == expected_answer:
-            print("Complete!")
+        if current_answer[serial] == expected_answer[serial]:
+            print("Yeah")
+        else:
+            print("no")
     
 def main():
+    
     sorter = choose_sort()
+    img = sort_image(sorter)
+    main_img.show()
     devices = find_rfid_devices(sorter)
     print(f"Sort the computer's memory by: {sorter}")
     print(expected_answer)
