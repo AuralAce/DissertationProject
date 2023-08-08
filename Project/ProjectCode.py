@@ -148,15 +148,20 @@ def read_rfid_device(rfid_devices):
 async def read_input():
     
     global last_id
+    global main_img
     
     while True:
         last_id = input()
         print("Input = " + last_id)
         await asyncio.sleep(1)
+        main_img.show()
+        if current_answer == expected_answer:
+            print("Complete!")
 
 #async function using evdev package to use the event paths to continue with project logic
 async def read_events(device):
     async for event in device.async_read_loop():
+        global main_img
         print(device.path)
         path = device.path
         print("Hello " + path)
@@ -166,10 +171,13 @@ async def read_events(device):
         print(current_answer[serial])
         print(current_answer)
         if current_answer[serial] == expected_answer[serial]:
-            print("Yeah")
+            bar_img = green_images[serial]
+            main_img = Image.alpha_composite(main_img, bar_img)
         else:
-            print("no")
+            bar_img = red_images[serial]
+            main_img = Image.alpha_composite(main_img, bar_img)
     
+            
 def main():
     
     sorter = choose_sort()
