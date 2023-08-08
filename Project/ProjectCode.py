@@ -1,208 +1,212 @@
+import evdev
+from pyudev import Context, Device
 import asyncio
-#import evdev
 import random
-import usb.core
-import usb.util
 
-'''
-rfid1 = evdev.InputDevice('/dev/input/event7')
-rfid2 = evdev.InputDevice('/dev/input/event9')
-rfid3 = evdev.InputDevice('/dev/input/event11')
-rfid4 = evdev.InputDevice('/dev/input/event13')
-rfid5 = evdev.InputDevice('/dev/input/event15')
-rfid6 = evdev.InputDevice('/dev/input/event17')
-rfid7 = evdev.InputDevice('/dev/input/event19')
-
-async def print_events(device):
-    async for event in device.async_read_loop():
-        print(device.path, evdev.categorize(event), sep=': ')
-'''
-'''
-for device in rfid1, rfid2, rfid3, rfid4, rfid5, rfid6, rfid7:
-    #asyncio.ensure_future(print_events(device))
-    uid = input()
-    if uid == "0009889158" and evdev.util.is_device(rfid1):
-        print("hello")
-    elif uid == "0009889158" and evdev.util.is_device(rfid2):
-        print("hello 2")
-    elif uid == "0009889158" and evdev.util.is_device(rfid3):
-        print("hello 3")
-    elif uid == "0009889158" and evdev.util.is_device(rfid4):
-        print("hello 4")
-    elif uid == "0009889158" and evdev.util.is_device(rfid5):
-        print("hello 5")
-    elif uid == "0009889158" and evdev.util.is_device(rfid6):
-        print("hello 6")
-    elif uid == "0009889158" and evdev.util.is_device(rfid7):
-        print("hello 7")
-   
-    
-loop = asyncio.get_event_loop()
-loop.run_forever()
-'''
-
+# Global Variable
+vendor_id = 0x1a86
+product_id = 0xdd01
+device_name = "RFID Reader RFID Reader Keyboard"
+last_id = ""
+rfid_devices = {}
 sort = ["Cartridge Colour","Room Name, Alphabetically","Size of Memory(GB)"]
+expected_answer = {}
+current_answer = {}
 
 colour = {
     
     "0009889158": "Red",
     
-    "2527844940": "Orange",
+    "0009882317": "Orange",
     
     "0009889190": "Yellow",
     
-    "2528019490": "Green",
+    "0009882781": "Green",
     
-    "2528028748": "Blue",
+    "0009881990": "Blue",
     
-    "2528028480": "Indigo",
+    "0009891572": "Indigo",
     
-    "2528028129": "Violet"
+    "0009889520": "Violet"
     
     }
+
+colour_array = ["0009889158", "0009882317", "0009889190", "0009882781", "0009881990", "0009891572", "0009889520"] 
 
 room_names = {
     
-    "2527844940": "Living Room",
+    "0009889190": "Bathroom",
     
     "0009889158": "Bedroom",
     
-    "2528019490": "Kitchen",
+    "0009891572": "Garage",
     
-    "0009889190": "Bathroom",
+    "0009889520": "Hall",
     
-    "2528028480": "Garage",
+    "0009882781": "Kitchen",
     
-    "2528028129": "Hall",
+    "0009882317": "Living Room",
     
-    "2528028748": "Utility"
+    "0009881990": "Utility"
     
     }
-    
+
+room_names_array = ["0009889190", "0009889158", "0009891572", "0009889520", "0009882781", "0009882317", "0009881990"] 
+
 size = {
     
-    "0009889158": "64",
-    
-    "2527844940": "8",
+    "0009882317": "8",
     
     "0009889190": "16",
 
-    "2528019490": "32",
+    "0009882781": "32",
+    
+    "0009889158": "64",
+    
+    "0009889520": "128",
 
-    "2528028748": "512",
-
-    "2528028480": "256",
-
-    "2528028129": "128"
+    "0009891572": "256",
+    
+    "0009881990": "512"
     
     }
 
-answer = []
-colour_order = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"]
-room_names_order = ["Bathroom", "Bedroom", "Garage", "Hall" "Kitchen", "Living Room", "Utility"]
-size_order = ["8", "16", "32", "64", "128", "256", "512"]
+size_array = ["0009882317", "0009889190", "0009882781", "0009889158", "0009889520", "0009891572", "0009881990"] 
+
+# Class to hold RFID device information
+class RFIDDevice:
+    def __init__(self, device, serial_number, event_path):
+        self.device = device
+        self.serial_number = serial_number
+        self.event_path = event_path
 
 #function to choose how the puzzle must be sorted
 def choose_sort():
     rand = random.choice(sort)
     return rand
 
-#function to find all RFID devices
-def find_devices(vendor_id, product_id):
+# get device paths
+def find_device_paths():
+    device_paths = []
+
+    for path in evdev.list_devices():
+
+        device = evdev.InputDevice(path)
+
+        if device.info.vendor == vendor_id and device.info.product == product_id and device.name == device_name:
+            device_paths.append(path)
+
+    return device_paths
+
+# Global path variables
+rfids = []
+for i in range(7):
+    rfids.append(evdev.InputDevice(find_device_paths()[i]))
+
+
+# Function to find USB RFID devices and retrieve their serial numbers
+def find_rfid_devices(sorter):
+
+    i = 0
+
+    for path in evdev.list_devices():
+
+        try:
+
+            device = evdev.InputDevice(path)
+
+            if device.info.vendor == vendor_id and device.info.product == product_id and device.name == device_name:
+
+                serial_number = get_usb_device_serial(device.path)
+
+                if serial_number is not None:
+                    
+                    rfid_devices[path] = RFIDDevice(device, serial_number, path)
+                    
+                    if(sorter=="Cartridge Colour"):
+                        
+                        expected_answer[serial_number] = colour_array[i]
+                        i+=1
+
+                    if(sorter=="Room Name, Alphabetically"):
+
+                        expected_answer[serial_number] = room_names_array[i]
+                        i+=1
+
+                    if(sorter=="Size of Memory(GB)"):
+                        
+                        expected_answer[serial_number] = size_array[i]
+                        i+=1
+                    
+                    current_answer[serial_number] = ""
+                    print(rfid_devices[path].serial_number, rfid_devices[path].event_path)
+
+        except Exception as e:
+
+            print(e)
+
+    if not rfid_devices:
+        print("Nope")
+
+    return rfid_devices
+
+#using udev to get the serial number of the usb devices
+def get_usb_device_serial(path: str) -> str:
+    context = Context()
+    udev_device = Device.from_device_file(context, path)
+    return udev_device.get("ID_SERIAL_SHORT")
+
+#function that starts the reading from the RFID devices
+def read_rfid_device(rfid_devices):
+
+    global last_id
     
-    devices = usb.core.find(find_all=True)
-    
-    matching_devices = []
-    
-    for dev in devices:
+    devices = rfid_devices
+
+    while True:
+ 
+        for device in rfids:
+            asyncio.ensure_future(read_events(device))
         
-        if dev.idVendor == vendor_id and dev.idProduct == product_id:
-            matching_devices.append(dev)
-            
-    return matching_devices
-
-def find_serial_number():
-    
-    vendor_id = 0x1a86
-    product_id = 0xdd01
-    
-    devices = find_devices(vendor_id, product_id)
-    
-    if not devices:
-        print("No devices found with specified vendor and product IDS.")
-        return
-    
-    devices = devices[:7]
-    
-    serial = []
-    
-    for dev in devices:
+        asyncio.ensure_future(read_input())
         
-        serial_number = usb.util.get_string(dev, dev.iSerialNumber)
-        print(f"Device Serial Number: {serial_number}")
-        serial.append(serial_number)
+        
+        loop = asyncio.get_event_loop()
+        loop.run_forever()   
+        
+#async function that accepts input from the RFID reader and then sleeps so the next async function can take place
+async def read_input():
+    
+    global last_id
+    
+    while True:
+        last_id = input()
+        print("Input = " + last_id)
+        await asyncio.sleep(1)
 
-
-while True:
-    serial_no = find_serial_number()
+#async function using evdev package to use the event paths to continue with project logic
+async def read_events(device):
+    async for event in device.async_read_loop():
+        print(device.path)
+        path = device.path
+        print("Hello " + path)
+        serial = rfid_devices[path].serial_number
+        print("Last ID: " + last_id + " received on " + serial)
+        current_answer[serial] = last_id
+        print(current_answer[serial])
+        print(current_answer)
+        if current_answer == expected_answer:
+            print("Complete!")
+    
+def main():
     sorter = choose_sort()
+    devices = find_rfid_devices(sorter)
     print(f"Sort the computer's memory by: {sorter}")
+    print(expected_answer)
+    print(current_answer)
+    read_rfid_device(devices)
 
-    if sorter == "Cartridge Colour":
-    
-        while len(answer) < 7:
-        
-            uid = input()
-            print (colour.get(uid))
-            answer.append(colour.get(uid))
-            print(answer)
-        
-            if answer == colour_order and len(answer) == 7:
-            
-                print("Correct!")
-                break
-        
-            elif answer != colour_order and len(answer) == 7:
-            
-                print("Incorrect! Try Again!")
-                answer.clear()
-        
-    if sorter == "Room Name, Alphabetically":
-    
-        while len(answer) < 7:
-        
-            uid = input()
-            print (room_names.get(uid))
-            answer.append(room_names.get(uid))
-            print(answer)
-        
-            if answer == room_names_order and len(answer) == 7:
-            
-                print("Correct!")
-                break
-        
-            elif answer != room_names_order and len(answer) == 7:
-            
-                print("Incorrect! Try Again!")
-                answer.clear()
-        
-    if sorter == "Size of Memory(GB)":
-    
-        while len(answer) < 7:
-        
-            uid = input()
-            print (size.get(uid))
-            answer.append(size.get(uid))
-            print(answer)
-        
-            if answer == size_order and len(answer) == 7:
-            
-                print("Correct!")
-                break
-        
-            elif answer != size_order and len(answer) == 7:
-            
-                print("Incorrect! Try Again!")
-                answer.clear()
-    print("Puzzle Complete!")
-    break
+
+if __name__ == "__main__":
+    main()
+
