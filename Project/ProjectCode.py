@@ -118,7 +118,7 @@ def find_rfid_devices(sorter):
                         i+=1
                     
                     current_answer[serial_number] = ""
-                    print(rfid_devices[path].serial_number, rfid_devices[path].event_path)
+                    #print(rfid_devices[path].serial_number, rfid_devices[path].event_path)
 
         except Exception as e:
 
@@ -162,26 +162,30 @@ async def read_input():
     #global main_img
     
     while True:
+        
         for values in bars.values():
             print(values, end=" ")
-        last_id = input("\n")
-        print("Input = " + last_id)
-        await asyncio.sleep(1)
-        #main_img.show()
         if current_answer == expected_answer:
             print("Complete!")
+            input()
+        last_id = input("\nCartridge ID: ")
+        #print("Input = " + last_id)
+        
+        await asyncio.sleep(1)
+        #main_img.show()
+        
 
 #async function using evdev package to use the event paths to continue with project logic
 async def read_events(device):
     async for event in device.async_read_loop():
         #global main_img
-        print(device.path)
+        #print(device.path)
         path = device.path
-        print("Hello " + path)
+        #print("Hello " + path)
         serial = rfid_devices[path].serial_number
-        print("Last ID: " + last_id + " received on " + serial)
+        #print("Last ID: " + last_id + " received on " + serial)
         current_answer[serial] = last_id
-        print(current_answer[serial])
+        #print(current_answer[serial])
         '''
         if current_answer[serial] == expected_answer[serial]:
             bar_img = green_images[serial]
@@ -207,8 +211,8 @@ def main():
     #main_img.show()
     devices = find_rfid_devices(sorter)
     print(f"Sort the computer's memory by: {sorter}")
-    print(expected_answer)
-    print(current_answer)
+    #print(expected_answer)
+    #print(current_answer)
     read_rfid_device(devices)
 
 
