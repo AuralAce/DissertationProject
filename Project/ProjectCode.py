@@ -134,9 +134,11 @@ def read_rfid_device(rfid_devices):
     devices = rfid_devices
 
     while True:
- 
+     
         for device in rfids:
             asyncio.ensure_future(read_events(device))
+        
+        #asyncio.ensure_future(display_image())
         
         asyncio.ensure_future(read_input())
         
@@ -177,7 +179,10 @@ async def read_events(device):
             bar_img = red_images[serial]
             main_img = Image.alpha_composite(main_img, bar_img)
     
-            
+#uses PIL Image.show() to display image to screen
+async def display_image():
+    main_img.show()
+
 def main():
     
     sorter = choose_sort()
