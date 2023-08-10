@@ -3,7 +3,8 @@ from pyudev import Context, Device
 import asyncio
 import random
 from colorama import Fore, Back, Style
-from PIL import Image
+import os
+from hubclient import hubclient
 
 # Global Variable
 vendor_id = 0x1a86
@@ -14,27 +15,100 @@ rfid_devices = {}
 sort = ["Cartridge Colour","Room Name, Alphabetically","Size of Memory(GB)"]
 expected_answer = {}
 current_answer = {}
-#main_img = Image.open("Images/Sort The Memory Cards.png")
-#green_images = {}
-#red_images = {}
 bar = Fore.WHITE + '█'
 bars = {}
-
-'''
-green_bars = [Image.open("Images/Green 1.png"), Image.open("Images/Green 2.png"), Image.open("Images/Green 3.png"),
-              Image.open("Images/Green 4.png"), Image.open("Images/Green 5.png"), Image.open("Images/Green 6.png"),
-              Image.open("Images/Green 7.png")]
-
-red_bars = [Image.open("Images/Red 1.png"), Image.open("Images/Red 2.png"), Image.open("Images/Red 3.png"),
-              Image.open("Images/Red 4.png"), Image.open("Images/Red 5.png"), Image.open("Images/Red 6.png"),
-              Image.open("Images/Red 7.png")]
-'''
+#names = ""
+reset = False
 
 colour_array = ["0009889158", "0009882317", "0009889190", "0009882781", "0009881990", "0009891572", "0009889520"] 
 
 room_names_array = ["0009889190", "0009889158", "0009891572", "0009889520", "0009882781", "0009882317", "0009881990"] 
 
 size_array = ["0009882317", "0009889190", "0009882781", "0009889158", "0009889520", "0009891572", "0009881990"] 
+
+colour = {
+    
+    "0009889158": "Red",
+    
+    "0009882317": "Orange",
+    
+    "0009889190": "Yellow",
+    
+    "0009882781": "Green",
+    
+    "0009881990": "Blue",
+    
+    "0009891572": "Indigo",
+    
+    "0009889520": "Violet"
+    
+    }
+
+room_names = {
+    
+    "0009889190": "Bathroom",
+    
+    "0009889158": "Bedroom",
+    
+    "0009891572": "Garage",
+    
+    "0009889520": "Hall",
+    
+    "0009882781": "Kitchen",
+    
+    "0009882317": "Living Room",
+    
+    "0009881990": "Utility"
+    
+    }
+
+size = {
+    
+    "0009882317": "8",
+    
+    "0009889190": "16",
+
+    "0009882781": "32",
+    
+    "0009889158": "64",
+    
+    "0009889520": "128",
+
+    "0009891572": "256",
+    
+    "0009881990": "512"
+    
+    }
+
+device = { # a dictionary containing our device details
+        "room": "1", # ID of the room we are to register to
+        "name": "Bookcase", # display name of the device
+        "status": "Active", # textual status for management display
+        "actions": [ # list of actions (of empty list!)
+            {
+                "actionid": "reset", # the ID we will receive for this action
+                "name": "Reset", # friendly name for display in the hub
+                "enabled": True # is this action currently available
+            },
+            {
+                "actionid": "ACTTWO", 
+                "name": "Action Two", 
+                "enabled": False 
+            }
+        ]
+    }
+
+def ActionHandler(actionid): # handler when we receive an action for us
+    print("Action handler for ID "+actionid)
+    # for the demo we will toggle i.e. ACTONE will disable ONE and enable TWO and vice-versa
+    if actionid == "reset":
+        device['status'] = "Active"
+        hub.Update(device)
+        reset_program()
+    else:
+        print("Unknown action") # useful for debug
+        # and we update this state i.e. push it back to the hub
+        hub.Update(device)
 
 # Class to hold RFID device information
 class RFIDDevice:
@@ -48,17 +122,16 @@ def choose_sort():
     rand = random.choice(sort)
     return rand
 
-'''
-#Uses PIL to composite the correct sort image onto the background image
-def sort_image(sorter):
+#resets the program on action from hub
+def reset_program():
     
-    global main_img
-    
-    sort_img = Image.open(f"Images/{sorter}.png")
-    
-    main_img = Image.alpha_composite(main_img, sort_img)
-'''
-
+    print(Style.RESET_ALL)
+    sorter = choose_sort()
+    devices = find_rfid_devices(sorter)
+    print(f"Sort the computer's memory by: {sorter}")    
+    for values in bars.values():
+        print(values, end=" ")
+    print("\n")
 # get device paths
 def find_device_paths():
     device_paths = []
@@ -67,7 +140,8 @@ def find_device_paths():
 
         device = evdev.InputDevice(path)
 
-        if device.info.vendor == vendor_id and device.info.product == product_id and device.name == device_name:
+        if (device.info.vendor == vendor_id and device.info.product == product_id
+            and device.name == device_name):
             device_paths.append(path)
 
     return device_paths
@@ -96,25 +170,24 @@ def find_rfid_devices(sorter):
                     
                     rfid_devices[path] = RFIDDevice(device, serial_number, path)
                     
-                    #green_images[serial_number] = green_bars[i]
-                    
-                    #red_images[serial_number] = red_bars[i]
-                    
                     bars[serial_number] = bar
                     
                     if(sorter=="Cartridge Colour"):
                         
                         expected_answer[serial_number] = colour_array[i]
+                        #names = colour
                         i+=1
 
                     if(sorter=="Room Name, Alphabetically"):
 
                         expected_answer[serial_number] = room_names_array[i]
+                        #names = room_names
                         i+=1
 
                     if(sorter=="Size of Memory(GB)"):
                         
                         expected_answer[serial_number] = size_array[i]
+                        #names = size
                         i+=1
                     
                     current_answer[serial_number] = ""
@@ -143,42 +216,50 @@ def read_rfid_device(rfid_devices):
     devices = rfid_devices
 
     while True:
-     
+        
         for device in rfids:
             asyncio.ensure_future(read_events(device))
         
-        #asyncio.ensure_future(display_image())
-        
         asyncio.ensure_future(read_input())
-        
-        
+
         loop = asyncio.get_event_loop()
+
         loop.run_forever()   
         
 #async function that accepts input from the RFID reader and then sleeps so the next async function can take place
 async def read_input():
     
     global last_id
-    #global main_img
+    global device
     
     while True:
         
         for values in bars.values():
             print(values, end=" ")
         if current_answer == expected_answer:
-            print("Complete!")
-            input()
-        last_id = input("\nCartridge ID: ")
-        #print("Input = " + last_id)
-        
+            print("\n" + Fore.WHITE + "Complete!")
+            print(Fore.YELLOW + r"""                                   .''.       
+       .''.      .        *''*    :_\/_:     . 
+      :_\/_:   _\(/_  .:.*_\/_*   : /\ :  .'.:.'.
+  .''.: /\ :   ./)\   ':'* /\ * :  '..'.  -=:o:=-
+ :_\/_:'.:::.    ' *''*    * '.\'/.' _\(/_'.':'.'
+ : /\ : :::::     *_\/_*     -= o =-  /)\    '  *
+  '..'  ':::'     * /\ *     .'/.\'.   '
+      *            *..*         :
+        *
+        *""")
+            print(Style.RESET_ALL)
+            device["status"] = "Complete"
+            hub.Update(device)
+            await asyncio.sleep(100)
+        last_id = input("\n")
+        print("\x1B[F\x1B[2K", end="")
+        print("Cartridge Inserted: " + last_id)
         await asyncio.sleep(1)
-        #main_img.show()
-        
 
 #async function using evdev package to use the event paths to continue with project logic
 async def read_events(device):
     async for event in device.async_read_loop():
-        #global main_img
         #print(device.path)
         path = device.path
         #print("Hello " + path)
@@ -186,29 +267,14 @@ async def read_events(device):
         #print("Last ID: " + last_id + " received on " + serial)
         current_answer[serial] = last_id
         #print(current_answer[serial])
-        '''
-        if current_answer[serial] == expected_answer[serial]:
-            bar_img = green_images[serial]
-            main_img = Image.alpha_composite(main_img, bar_img)
-        else:
-            bar_img = red_images[serial]
-            main_img = Image.alpha_composite(main_img, bar_img)
-        '''
         if current_answer[serial] == expected_answer[serial]:
             bars[serial] = Fore.GREEN + "█"
         else:
             bars[serial] = Fore.RED + "█"
-'''           
-#uses PIL Image.show() to display image to screen
-async def display_image():
-    main_img.show()
-'''
 
 def main():
     
     sorter = choose_sort()
-    #img = sort_image(sorter)
-    #main_img.show()
     devices = find_rfid_devices(sorter)
     print(f"Sort the computer's memory by: {sorter}")
     #print(expected_answer)
@@ -217,5 +283,23 @@ def main():
 
 
 if __name__ == "__main__":
+    
+    huburi = "ws://192.168.0.2:8000/connect" # URI of the EscapeHub WS service
+
+    hub = hubclient() # the instance of the hubclient
+    
+    hub.setDebug(False) # will output LOTS to the console
+    
+    hub.actionHandler = ActionHandler # assign the function above to handle (receive) actions for us
+    
+    print("Startup")
+
+    print("Connecting to EscapeHub via "+huburi)
+
+    hub.Connect(huburi)
+
+    print("Registering Device")
+    myid = hub.Register(device)
+
     main()
 
