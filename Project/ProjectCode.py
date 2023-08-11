@@ -17,7 +17,7 @@ expected_answer = {}
 current_answer = {}
 bar = Fore.WHITE + '█'
 bars = {}
-#names = ""
+names = {}
 reset = False
 
 colour_array = ["0009889158", "0009882317", "0009889190", "0009882781", "0009881990", "0009891572", "0009889520"] 
@@ -64,19 +64,19 @@ room_names = {
 
 size = {
     
-    "0009882317": "8",
+    "0009882317": "8GB",
     
-    "0009889190": "16",
+    "0009889190": "16GB",
 
-    "0009882781": "32",
+    "0009882781": "32GB",
     
-    "0009889158": "64",
+    "0009889158": "64GB",
     
-    "0009889520": "128",
+    "0009889520": "128GB",
 
-    "0009891572": "256",
+    "0009891572": "256GB",
     
-    "0009881990": "512"
+    "0009881990": "512GB"
     
     }
 
@@ -132,6 +132,7 @@ def reset_program():
     for values in bars.values():
         print(values, end=" ")
     print("\n")
+
 # get device paths
 def find_device_paths():
     device_paths = []
@@ -175,19 +176,19 @@ def find_rfid_devices(sorter):
                     if(sorter=="Cartridge Colour"):
                         
                         expected_answer[serial_number] = colour_array[i]
-                        #names = colour
+                        names[colour_array[i]] = colour[colour_array[i]]
                         i+=1
 
                     if(sorter=="Room Name, Alphabetically"):
 
                         expected_answer[serial_number] = room_names_array[i]
-                        #names = room_names
+                        names[room_names_array[i]] = room_names[room_names_array[i]]
                         i+=1
 
                     if(sorter=="Size of Memory(GB)"):
                         
                         expected_answer[serial_number] = size_array[i]
-                        #names = size
+                        names[size_array[i]] = size[size_array[i]]
                         i+=1
                     
                     current_answer[serial_number] = ""
@@ -254,7 +255,7 @@ async def read_input():
             await asyncio.sleep(100)
         last_id = input("\n")
         print("\x1B[F\x1B[2K", end="")
-        print("Cartridge Inserted: " + last_id)
+        print(Style.RESET_ALL + "Cartridge Inserted: " + names[last_id])
         await asyncio.sleep(1)
 
 #async function using evdev package to use the event paths to continue with project logic
@@ -300,6 +301,6 @@ if __name__ == "__main__":
 
     print("Registering Device")
     myid = hub.Register(device)
-
+    
     main()
 
