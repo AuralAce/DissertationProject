@@ -264,7 +264,12 @@ async def read_input():
         for values in bars.values():
             print(values, end= " ") 
         if current_answer == expected_answer:
-            print("\n" + Fore.WHITE + "Complete!")
+            #print("\n" + Fore.WHITE + "Complete!")
+            print("\n" + Fore.WHITE + r"""
+░█▀█░█░█░▀▀█░▀▀█░█░░░█▀▀░░░█▀▀░█▀█░█▄█░█▀█░█░░░█▀▀░▀█▀░█▀▀░░░█
+░█▀▀░█░█░▄▀░░▄▀░░█░░░█▀▀░░░█░░░█░█░█░█░█▀▀░█░░░█▀▀░░█░░█▀▀░░░▀
+░▀░░░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀░░░▀▀▀░▀▀▀░▀░▀░▀░░░▀▀▀░▀▀▀░░▀░░▀▀▀░░░▀
+                    """)
             print(Fore.WHITE + r"""                                   .''.       
        .''.      .        *''*    :_\/_:     . 
       :_\/_:   _\(/_  .:.*_\/_*   : /\ :  .'.:.'.
