@@ -12,13 +12,13 @@ product_id = 0xdd01
 device_name = "RFID Reader RFID Reader Keyboard"
 last_id = ""
 rfid_devices = {}
-sort = ["Cartridge Colour","Room Name, Alphabetically","Size of Memory(MB)"]
+sort = ["Cartridge Colour","Room Name, Alphabetically","Size of Memory(GB)"]
 expected_answer = {}
 current_answer = {}
 bar = Fore.WHITE + '█'
 bars = {}
 names = {}
-sorter = ""
+reset = False
 
 colour_array = ["0009889158", "0009882317", "0009889190", "0009882781", "0009881990", "0009891572", "0009889520"] 
 
@@ -64,19 +64,19 @@ room_names = {
 
 size = {
     
-    "0009882317": "8MB",
+    "0009882317": "8GB",
     
-    "0009889190": "16MB",
+    "0009889190": "16GB",
 
-    "0009882781": "32MB",
+    "0009882781": "32GB",
     
-    "0009889158": "64MB",
+    "0009889158": "64GB",
     
-    "0009889520": "128MB",
+    "0009889520": "128GB",
 
-    "0009891572": "256MB",
+    "0009891572": "256GB",
     
-    "0009881990": "512MB"
+    "0009881990": "512GB"
     
     }
 
@@ -91,46 +91,19 @@ device = { # a dictionary containing our device details
                 "enabled": True # is this action currently available
             },
             {
-                "actionid": "resettocolour", 
-                "name": "Reset To Colour", 
-                "enabled": True 
-            },
-            {
-                "actionid": "resettoname", 
-                "name": "Reset To Room Name", 
-                "enabled": True 
-            },
-            {
-                "actionid": "resettosize", 
-                "name": "Reset To Size", 
-                "enabled": True 
+                "actionid": "ACTTWO", 
+                "name": "Action Two", 
+                "enabled": False 
             }
         ]
     }
 
 def ActionHandler(actionid): # handler when we receive an action for us
-    global sorter
     print("Action handler for ID "+actionid)
     # for the demo we will toggle i.e. ACTONE will disable ONE and enable TWO and vice-versa
     if actionid == "reset":
         device['status'] = "Active"
         hub.Update(device)
-        sorter = choose_sort()
-        reset_program()
-    elif actionid == "resettocolour":
-        device['status'] = "Active"
-        hub.Update(device)
-        sorter = sort[0]
-        reset_program()
-    elif actionid == "resettoname":
-        device['status'] = "Active"
-        hub.Update(device)
-        sorter = sort[1]
-        reset_program()
-    elif actionid == "resettosize":
-        device['status'] = "Active"
-        hub.Update(device)
-        sorter = sort[2]
         reset_program()
     else:
         print("Unknown action") # useful for debug
@@ -153,6 +126,7 @@ def choose_sort():
 def reset_program():
     
     print(Style.RESET_ALL)
+    sorter = choose_sort()
     devices = find_rfid_devices(sorter)
     print(f"Sort the computer's memory by: {sorter}")    
     for values in bars.values():
@@ -211,7 +185,7 @@ def find_rfid_devices(sorter):
                         names[room_names_array[i]] = room_names[room_names_array[i]]
                         i+=1
 
-                    if(sorter=="Size of Memory(MB)"):
+                    if(sorter=="Size of Memory(GB)"):
                         
                         expected_answer[serial_number] = size_array[i]
                         names[size_array[i]] = size[size_array[i]]
@@ -225,7 +199,7 @@ def find_rfid_devices(sorter):
             print(e)
 
     if not rfid_devices:
-        print("No RFID Devices Found")
+        print("Nope")
 
     return rfid_devices
 
@@ -310,7 +284,7 @@ def main():
 
 
 if __name__ == "__main__":
-    
+    '''
     huburi = "ws://192.168.0.2:8000/connect" # URI of the EscapeHub WS service
 
     hub = hubclient() # the instance of the hubclient
@@ -327,6 +301,6 @@ if __name__ == "__main__":
 
     print("Registering Device")
     myid = hub.Register(device)
-     
+    ''' 
     main()
 
