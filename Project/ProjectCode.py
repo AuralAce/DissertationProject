@@ -260,12 +260,12 @@ async def read_input():
     global device
     
     while True:
-        
+
         for values in bars.values():
-            print(values, end=" ")
+            print(values, end= " ") 
         if current_answer == expected_answer:
             print("\n" + Fore.WHITE + "Complete!")
-            print(Fore.YELLOW + r"""                                   .''.       
+            print(Fore.WHITE + r"""                                   .''.       
        .''.      .        *''*    :_\/_:     . 
       :_\/_:   _\(/_  .:.*_\/_*   : /\ :  .'.:.'.
   .''.: /\ :   ./)\   ':'* /\ * :  '..'.  -=:o:=-
