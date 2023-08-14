@@ -69,7 +69,7 @@ size = {
     "0009889190": "16MB",
 
     "0009882781": "32MB",
-    
+     
     "0009889158": "64MB",
     
     "0009889520": "128MB",
@@ -281,8 +281,12 @@ async def read_input():
             await asyncio.sleep(100)
         last_id = input("\n")
         print("\x1B[F\x1B[2K", end="")
-        print(Style.RESET_ALL + "Cartridge Inserted: " + names[last_id])
-        await asyncio.sleep(1)
+        if len(last_id) != 10:
+            last_id = ""
+            print("Insert 1 Card at a time! :)")
+        else:
+            print(Style.RESET_ALL + "Cartridge Inserted: " + names[last_id])
+            await asyncio.sleep(1)
 
 #async function using evdev package to use the event paths to continue with project logic
 async def read_events(device):
