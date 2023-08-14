@@ -265,11 +265,7 @@ async def read_input():
             print(values, end= " ") 
         if current_answer == expected_answer:
             #print("\n" + Fore.WHITE + "Complete!")
-            print("\n" + Fore.WHITE + r"""
-░█▀█░█░█░▀▀█░▀▀█░█░░░█▀▀░░░█▀▀░█▀█░█▄█░█▀█░█░░░█▀▀░▀█▀░█▀▀░░░█
-░█▀▀░█░█░▄▀░░▄▀░░█░░░█▀▀░░░█░░░█░█░█░█░█▀▀░█░░░█▀▀░░█░░█▀▀░░░▀
-░▀░░░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀░░░▀▀▀░▀▀▀░▀░▀░▀░░░▀▀▀░▀▀▀░░▀░░▀▀▀░░░▀
-                    """)
+            print("\n" + Fore.WHITE + "PUZZLE COMPLETE!!!")
             print(Fore.WHITE + r"""                                   .''.       
        .''.      .        *''*    :_\/_:     . 
       :_\/_:   _\(/_  .:.*_\/_*   : /\ :  .'.:.'.
