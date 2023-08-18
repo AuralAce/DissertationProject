@@ -104,6 +104,11 @@ device = { # a dictionary containing our device details
                 "actionid": "resettosize", 
                 "name": "Reset To Size", 
                 "enabled": True 
+            },
+            {
+                "actionid": "printsort",
+                "name": "Print Sort Type",
+                "enabled": True
             }
         ]
     }
@@ -132,6 +137,11 @@ def ActionHandler(actionid): # handler when we receive an action for us
         hub.Update(device)
         sorter = sort[2]
         reset_program()
+    elif actionid == "_PING":
+        print('Clearing Screen')
+        os.system('clear')
+    elif actionid == "printsort"
+        print('Sort Cartridges By: '+sorter)
     else:
         print("Unknown action") # useful for debug
         # and we update this state i.e. push it back to the hub
