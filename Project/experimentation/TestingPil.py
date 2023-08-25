@@ -14,7 +14,7 @@ def choose_sort():
     global sort_img
 
     rand = random.choice(sort)
-    sort_img = Image.open(f"Images/{rand}.png")
+    sort_img = Image.open(f"experimentation/Images/{rand}.png")
     return rand
 
 sorter= choose_sort()
