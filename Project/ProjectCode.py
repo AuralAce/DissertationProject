@@ -12,7 +12,6 @@ product_id = 0xdd01
 device_name = "RFID Reader RFID Reader Keyboard"
 last_id = ""
 rfid_devices = {}
-rfid_input_devices = []
 sort = ["Cartridge Colour", "Room Name, Alphabetically", "Size of Memory(MB)"]
 expected_answer = {}
 current_answer = {}
@@ -189,12 +188,10 @@ def find_device_paths():
     return device_paths
 
 
-# function to create the input devices for evdev to use and add them to an array
-def event_path_input_devices():
-    global rfid_input_devices
-
-    for i in range(7):
-        rfid_input_devices.append(evdev.InputDevice(find_device_paths()[i]))
+# Global path variables
+rfids = []
+for i in range(7):
+    rfids.append(evdev.InputDevice(find_device_paths()[i]))
 
 
 # Function to find USB RFID devices and retrieve their serial numbers
@@ -217,17 +214,17 @@ def find_rfid_devices(sorter):
 
                     bars[serial_number] = bar
 
-                    if sorter == "Cartridge Colour":
+                    if (sorter == "Cartridge Colour"):
                         expected_answer[serial_number] = colour_array[i]
                         names[colour_array[i]] = colour[colour_array[i]]
                         i += 1
 
-                    if sorter == "Room Name, Alphabetically":
+                    if (sorter == "Room Name, Alphabetically"):
                         expected_answer[serial_number] = room_names_array[i]
                         names[room_names_array[i]] = room_names[room_names_array[i]]
                         i += 1
 
-                    if sorter == "Size of Memory(MB)":
+                    if (sorter == "Size of Memory(MB)"):
                         expected_answer[serial_number] = size_array[i]
                         names[size_array[i]] = size[size_array[i]]
                         i += 1
@@ -253,14 +250,14 @@ def get_usb_device_serial(path: str) -> str:
 
 
 # function that starts the reading from the RFID devices
-def read_rfid_device():
+def read_rfid_device(rfid_devices):
     global last_id
 
-    event_path_input_devices()
+    devices = rfid_devices
 
     while True:
 
-        for device in rfid_input_devices:
+        for device in rfids:
             asyncio.ensure_future(read_events(device))
 
         asyncio.ensure_future(read_input())
@@ -269,8 +266,9 @@ def read_rfid_device():
 
         loop.run_forever()
 
+    # async function that accepts input from the RFID reader and then sleeps so the next async function can take place
 
-# async function that accepts input from the RFID reader and then sleeps so the next async function can take place
+
 async def read_input():
     global last_id
     global device
@@ -280,6 +278,7 @@ async def read_input():
         for values in bars.values():
             print(values, end=" ")
         if current_answer == expected_answer:
+            # print("\n" + Fore.WHITE + "Complete!")
             print("\n" + Fore.WHITE + "PUZZLE COMPLETE!!!")
             print(Fore.WHITE + r"""                                   .''.       
        .''.      .        *''*    :_\/_:     . 
@@ -323,11 +322,11 @@ async def read_events(device):
 
 def main():
     sorter = choose_sort()
-    find_rfid_devices(sorter)
+    devices = find_rfid_devices(sorter)
     print(f"Sort the computer's memory by: {sorter}")
     # print(expected_answer)
     # print(current_answer)
-    read_rfid_device()
+    read_rfid_device(devices)
 
 
 if __name__ == "__main__":
