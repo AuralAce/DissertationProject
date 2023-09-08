@@ -84,7 +84,7 @@ device = {  # a dictionary containing our device details
     "room": "1",  # ID of the room we are to register to
     "name": "Bookcase",  # display name of the device
     "status": "Active",  # textual status for management display
-    "actions": [  # list of actions (of empty list!)
+    "actions": [
         {
             "actionid": "reset",  # the ID we will receive for this action
             "name": "Reset",  # friendly name for display in the hub
